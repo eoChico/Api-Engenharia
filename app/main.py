@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from slowapi.errors import RateLimitExceeded
 
-from app.api.routes import auth, health, users
+from app.api.routes import auth, health, users, tables
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.middleware import SecurityHeadersMiddleware
@@ -57,4 +57,5 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(tables.router, prefix='/api/v1')
 app.include_router(users.router, prefix="/api/v1")

@@ -12,7 +12,7 @@ class UserRole(StrEnum):
     WAITER = "waiter"      # garçom
     MANAGER = "manager"    # gerente
     KITCHEN = "kitchen"    # cozinha
-
+    CASHIER = "cashier"    # caixa
 
 class User(Base):
     __tablename__ = "users"
