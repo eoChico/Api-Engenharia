@@ -1,7 +1,8 @@
 import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
+from datetime import datetime
+from enum import StrEnum
 
 class TableCreate(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -36,3 +37,22 @@ class TableRead(BaseModel):
     number: int
     seats: int
     is_active: bool
+
+class TableStatus(StrEnum):
+    FREE = 'free'
+    OCCUPIED = 'occupied'
+    BILL_REQUESTED = 'bill_requested'
+
+
+class TableSummary(TableRead):
+    """Cartão da mesa na listagem. É um superset do TableRead."""
+
+    status: TableStatus
+    waiter_id: uuid.UUID | None = None
+    waiter_name: str | None = None
+    party_size: int | None = None
+    opened_at: datetime | None = None
+    checks_count: int = 0
+    total_cents: int = 0
+    ready_count: int = 0                    # itens prontos ainda não entregues
+    waiting_since: datetime | None = None   # item mais antigo ainda não entregue

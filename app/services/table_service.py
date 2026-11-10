@@ -5,23 +5,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.restaurant_table import RestaurantTable
+from app.models.table_session import TableSession
 from app.models.user import User
 from app.schemas.restaurant_table import TableCreate, TableUpdate
 from app.services import audit_service
+from app.services.errors import ConflictError
 
 
 class TableNumberAlreadyExistsError(Exception):
     pass
-
-
-async def list_tables(
-    db: AsyncSession, limit: int, offset: int, include_inactive: bool
-) -> list[RestaurantTable]:
-    stmt = select(RestaurantTable).order_by(RestaurantTable.number)
-    if not include_inactive:
-        stmt = stmt.where(RestaurantTable.is_active.is_(True))
-    result = await db.execute(stmt.limit(limit).offset(offset))
-    return list(result.scalars())
 
 
 async def get_table(
@@ -65,6 +57,17 @@ async def update_table(
     ip: str | None,
 ) -> RestaurantTable:
     changes = {k: getattr(data, k) for k in data.model_fields_set}
+
+    # Mesa em atendimento não pode ser desativada.
+    if changes.get('is_active') is False and table.is_active:
+        open_session = await db.scalar(
+            select(TableSession.id).where(
+                TableSession.table_id == table.id, TableSession.closed_at.is_(None)
+            )
+        )
+        if open_session is not None:
+            raise ConflictError('Mesa em atendimento não pode ser desativada')
+
     before = {k: getattr(table, k) for k in changes}
 
     for key, value in changes.items():

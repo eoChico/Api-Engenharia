@@ -64,3 +64,14 @@ def require_roles(*roles: UserRole):
 
 
 ManagerUser = Annotated[User, Depends(require_roles(UserRole.MANAGER))]
+
+WaiterUser = Annotated[User, Depends(require_roles(UserRole.WAITER))]
+FloorUser = Annotated[User, Depends(require_roles(UserRole.WAITER, UserRole.MANAGER))]
+StaffUser = Annotated[
+    User, Depends(require_roles(UserRole.MANAGER, UserRole.WAITER, UserRole.CASHIER))
+]
+CashierUser = Annotated[User, Depends(require_roles(UserRole.CASHIER, UserRole.MANAGER))]
+KitchenUser = Annotated[User, Depends(require_roles(UserRole.KITCHEN, UserRole.MANAGER))]
+OrderActor = Annotated[
+    User, Depends(require_roles(UserRole.WAITER, UserRole.KITCHEN, UserRole.MANAGER))
+]

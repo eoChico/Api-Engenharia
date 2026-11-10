@@ -6,14 +6,15 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from slowapi.errors import RateLimitExceeded
-
-from app.api.routes import auth, health, products, tables, users
+from app.services.errors import DomainError
+from app.api.routes import auth, health, orders, products, tables, users
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.middleware import SecurityHeadersMiddleware
 from app.db.session import engine
 
 is_prod = settings.ENVIRONMENT == "prod"
+
 
 
 @asynccontextmanager
@@ -39,7 +40,13 @@ async def rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
         content={"detail": "Muitas requisições. Tente novamente em instantes."},
         headers={"Retry-After": str(retry_after)},
     )
+    async def domain_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        if isinstance(exc, DomainError):
+            return JSONResponse(status_code=exc.status_code, content={'detail': exc.message})
+        return JSONResponse(status_code=500, content={'detail': 'Erro interno'})
 
+
+    app.add_exception_handler(DomainError, domain_error_handler)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
@@ -57,6 +64,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(orders.router, prefix='/api/v1')
 app.include_router(products.router, prefix='/api/v1')
 app.include_router(tables.router, prefix='/api/v1')
 app.include_router(users.router, prefix="/api/v1")
